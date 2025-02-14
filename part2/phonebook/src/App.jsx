@@ -1,55 +1,15 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import phonebookService from './services/phonebook';
 
-// Filter Component
-const Filter = ({ searchTerm, handleSearchChange }) => (
-  <div>
-    Filter by name: <input value={searchTerm} onChange={handleSearchChange} />
-  </div>
-);
-
-// Form Component for Adding a New Person
-const PersonForm = ({ newName, newNumber, handleNameChange, handleNumberChange, addPerson }) => (
-  <form onSubmit={addPerson}>
-    <div>
-      Name: <input value={newName} onChange={handleNameChange} />
-    </div>
-    <div>
-      Number: <input value={newNumber} onChange={handleNumberChange} />
-    </div>
-    <div>
-      <button type="submit">add</button>
-    </div>
-  </form>
-);
-
-// Individual Person Component
-const Person = ({ person }) => (
-  <li>{person.name} - {person.number}</li>
-);
-
-// List of Persons Component
-const Persons = ({ persons }) => (
-  <ul>
-    {persons.map((person) => (
-      <Person key={person.id} person={person} />
-    ))}
-  </ul>
-);
-
-// Root App Component
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch data from the server when the component mounts
+  // Fetch initial data from server
   useEffect(() => {
-    axios.get('http://localhost:3001/persons')
-      .then(response => {
-        setPersons(response.data);
-      });
+    phonebookService.getAll().then(initialPersons => setPersons(initialPersons));
   }, []);
 
   const handleNameChange = (event) => setNewName(event.target.value);
@@ -58,38 +18,74 @@ const App = () => {
 
   const addPerson = (event) => {
     event.preventDefault();
-    if (persons.some((person) => person.name.toLowerCase() === newName.toLowerCase())) {
-      alert(`${newName} is already added to the phonebook`);
-      return;
-    }
-    const newPerson = { name: newName, number: newNumber };
     
-    // Send new person to the server
-    axios.post('http://localhost:3001/persons', newPerson)
-      .then(response => {
-        setPersons(persons.concat(response.data));
+    const existingPerson = persons.find(person => person.name.toLowerCase() === newName.toLowerCase());
+
+    if (existingPerson) {
+      const confirmUpdate = window.confirm(
+        `${newName} is already added to phonebook, replace the old number with a new one?`
+      );
+
+      if (confirmUpdate) {
+        const updatedPerson = { ...existingPerson, number: newNumber };
+
+        phonebookService.update(existingPerson.id, updatedPerson).then(returnedPerson => {
+          setPersons(persons.map(person => person.id !== existingPerson.id ? person : returnedPerson));
+          setNewName('');
+          setNewNumber('');
+        });
+      }
+    } else {
+      const newPerson = { name: newName, number: newNumber };
+
+      phonebookService.create(newPerson).then(returnedPerson => {
+        setPersons(persons.concat(returnedPerson));
         setNewName('');
         setNewNumber('');
       });
+    }
   };
 
-  const filteredPersons = persons.filter((person) =>
+  const deletePerson = (id) => {
+    const person = persons.find((p) => p.id === id);
+    if (window.confirm(`Delete ${person.name}?`)) {
+      phonebookService.remove(id).then(() => {
+        setPersons(persons.filter((p) => p.id !== id));
+      });
+    }
+  };
+
+  const filteredPersons = persons.filter(person => 
     person.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
   return (
     <div>
       <h2>Phonebook</h2>
-      <Filter searchTerm={searchTerm} handleSearchChange={handleSearchChange} />
+      <div>
+        Filter by name: <input value={searchTerm} onChange={handleSearchChange} />
+      </div>
       <h3>Add a new</h3>
-      <PersonForm
-        newName={newName}
-        newNumber={newNumber}
-        handleNameChange={handleNameChange}
-        handleNumberChange={handleNumberChange}
-        addPerson={addPerson}
-      />
+      <form onSubmit={addPerson}>
+        <div>
+          Name: <input value={newName} onChange={handleNameChange} />
+        </div>
+        <div>
+          Number: <input value={newNumber} onChange={handleNumberChange} />
+        </div>
+        <div>
+          <button type="submit">add</button>
+        </div>
+      </form>
       <h3>Numbers</h3>
-      <Persons persons={filteredPersons} />
+      <ul>
+        {filteredPersons.map(person => (
+          <li key={person.id}>
+            {person.name} {person.number} 
+            <button onClick={() => deletePerson(person.id)}>delete</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
