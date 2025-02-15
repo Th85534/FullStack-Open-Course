@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseUrl = 'https://ominous-adventure-g6977jqxpjpcwq5q-3001.app.github.dev/persons';
+const baseUrl = 'http://localhost:3001/persons';
 
 const getAll = () => axios.get(baseUrl).then(response => response.data);
 
