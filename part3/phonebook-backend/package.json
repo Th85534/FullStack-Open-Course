@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "deploy": "git config --global user.name 'Soumasish' && git config --global user.email 'dasguptasoumasish@gmail.com' && git checkout main && rm -rf dist && cd ../ && cd ../ && cd part2/phonebook && npm install && npm run build && cp -r dist ../../part3/phonebook-backend && git add . && git commit -m 'uibuild' && git push",
+    "deploy": "git config --global user.name 'Soumasish' && git config --global user.email 'dasguptasoumasish@gmail.com' && git checkout main && rm -rf dist && cd ../ && cd ../ && cd part2/phonebook && npm install && npm run build && cp -r dist ../../part3/phonebook-backend && cd ../../part3/phonebook-backend && git add . && git commit -m 'uibuild' && git push",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Soumasish",
