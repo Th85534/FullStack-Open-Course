@@ -2,10 +2,15 @@ const express = require('express');
 const app = express();
 const morgan = require("morgan");
 const cors = require("cors");
+const corsOptions = {
+  origin: '*',
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+};
 
 app.use(express.json());
 app.use(express.static('dist'));
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(morgan("tiny"));
 
 morgan.token("post-data", (req) => {
@@ -35,11 +40,6 @@ let persons = [
       "number": "39-23-6423122"
     }
 ];
-
-//home of server
-app.get("/", (req, res) => {
-    res.send("Welcome to the Phonebook API! Visit /api/persons to see the data.");
-});
 
 //get all persons
 app.get('/api/persons', (req, res) => {

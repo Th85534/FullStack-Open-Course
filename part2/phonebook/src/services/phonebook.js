@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseUrl = 'https://fullstack-open-course-6cw3.onrender.com/persons';
+const baseUrl = 'https://fullstack-open-course-6cw3.onrender.com/api/persons';
 
 const getAll = () => axios.get(baseUrl).then(response => response.data);
 
