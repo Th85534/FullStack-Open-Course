@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const baseUrl = 'https://fullstack-open-course-6cw3.onrender.com/api/persons';
-
+// const baseUrl = 'https://ominous-adventure-g6977jqxpjpcwq5q-3001.app.github.dev/api/persons';
 const getAll = () => axios.get(baseUrl).then(response => response.data);
 
 const create = (newPerson) => axios.post(baseUrl, newPerson).then(response => response.data);

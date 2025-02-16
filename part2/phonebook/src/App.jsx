@@ -35,14 +35,14 @@ const App = () => {
       if (confirmUpdate) {
         const updatedPerson = { ...existingPerson, number: newNumber };
 
-        phonebookService.update(existingPerson.id, updatedPerson)
+        phonebookService.update(existingPerson._id, updatedPerson)
           .then(returnedPerson => {
-            setPersons(persons.map(person => person.id !== existingPerson.id ? person : returnedPerson));
+            setPersons(persons.map(person => person._id !== existingPerson._id ? person : returnedPerson));
             showNotification(`Updated ${newName}'s number`, 'success');
           })
           .catch(error => {
             showNotification(`Error: ${newName} was already removed from server`, 'error');
-            setPersons(persons.filter(person => person.id !== existingPerson.id));
+            setPersons(persons.filter(person => person._id !== existingPerson._id));
           });
         
         setNewName('');

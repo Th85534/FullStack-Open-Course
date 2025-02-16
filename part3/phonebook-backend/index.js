@@ -74,6 +74,30 @@ app.post("/api/persons", async (req, res, next) => {
   }
 });
 
+app.put("/api/persons/:id", async (req, res, next) => {
+  const { name, number } = req.body;
+
+  if (!name || !number) {
+    return res.status(400).json({ error: "Name and number are required" });
+  }
+
+  try {
+    const updatedPerson = await Contact.findByIdAndUpdate(
+      req.params.id,
+      { name, number },
+      { new: true, runValidators: true, context: "query" } // Returns updated doc & applies validation
+    );
+
+    if (!updatedPerson) {
+      return res.status(404).json({ error: "Person not found" });
+    }
+
+    res.json(updatedPerson);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Delete a Person
 app.delete("/api/persons/:id", async (req, res, next) => {
   try {
