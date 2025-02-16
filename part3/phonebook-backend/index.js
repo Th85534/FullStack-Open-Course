@@ -42,20 +42,23 @@ app.get("/info", (req, res) => {
 });
 
 //get a single person
-app.get("/api/persons/:id", (req, res) => {
-    const id = req.params.id;
-    const person = persons.find((p) => p.id === id);
-  
+app.get("/api/persons/:id", async (req, res) => {
+  try {
+    const person = await Contact.findById(req.params.id);
+
     if (person) {
       res.json(person);
     } else {
       res.status(404).json({ error: "Person not found" });
     }
+  } catch (error) {
+    res.status(400).json({ error: "Invalid ID format" });
+  }
 });
 
 //adding new person
 app.post("/api/persons", async (req, res) => {
-  const { id, name, number } = req.body;
+  const { name, number } = req.body;
 
   if (!name || !number) {
     return res.status(400).json({ error: "Name and number are required" });
@@ -69,7 +72,7 @@ app.post("/api/persons", async (req, res) => {
       return res.status(400).json({ error: "Name must be unique" });
     }
 
-    const newPerson = new Contact({ id, name, number });
+    const newPerson = new Contact({ name, number });
     const savedPerson = await newPerson.save();
     console.log(savedPerson);
     return res.status(201).json(savedPerson);
@@ -78,17 +81,22 @@ app.post("/api/persons", async (req, res) => {
   }
 });
 
+
+
 //delete a person's data
-app.delete("/api/persons/:id", (req, res) => {
-  const id = req.params.id;
-  const person = persons.find((p) => p.id === id);
+app.delete("/api/persons/:id", async (req, res) => {
+  console.log("Received ID:", req.params.id);
+  try {
+    const person = await Contact.findByIdAndDelete(req.params.id);
 
-  if (!person) {
-    return res.status(404).json({ error: "Person not found" });
+    if (!person) {
+      return res.status(404).json({ error: "Person not found" });
+    }
+
+    res.status(204).end();
+  } catch (error) {
+    res.status(400).json({ error: "Invalid ID format" });
   }
-
-  persons = persons.filter((p) => p.id !== id);
-  res.status(204).end();
 });
 
 

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import phonebookService from './services/phonebook';
 import Notification from './components/Notification';
-import { nanoid } from 'nanoid';
+
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState('');
   const [newNumber, setNewNumber] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [notification, setNotification] = useState({ message: null, type: 'success' });
-
+  console.log(persons)
   useEffect(() => {
     phonebookService.getAll()
       .then(initialPersons => setPersons(initialPersons))
@@ -44,12 +44,12 @@ const App = () => {
             showNotification(`Error: ${newName} was already removed from server`, 'error');
             setPersons(persons.filter(person => person.id !== existingPerson.id));
           });
-
+        
         setNewName('');
         setNewNumber('');
       }
     } else {
-      const newPerson = { id: nanoid(20), name: newName, number: newNumber };
+      const newPerson = { name: newName, number: newNumber };
 
       phonebookService.create(newPerson)
         .then(returnedPerson => {
@@ -67,19 +67,23 @@ const App = () => {
   };
 
   const deletePerson = (id) => {
-    const person = persons.find(p => p.id === id);
+
+    const person = persons.find(p => p._id === id);
+
     if (window.confirm(`Delete ${person.name}?`)) {
-      phonebookService.remove(id)
-        .then(() => {
-          setPersons(prevPersons => prevPersons.filter(p => p.id !== id));
-          showNotification(`Deleted ${person.name}`, 'success');
-        })
-        .catch(() => {
-          showNotification(`Error: ${person.name} was already removed from server`, 'error');
-          setPersons(prevPersons => prevPersons.filter(p => p.id !== id));
-        });
+        phonebookService.remove(id)
+            .then(() => {
+                setPersons(prevPersons => prevPersons.filter(p => p._id !== id));
+                showNotification(`Deleted ${person.name}`, 'success');
+            })
+            .catch((err) => {
+                console.log(err);
+                showNotification(`Error: ${person.name} was already removed from server`, 'error');
+                setPersons(prevPersons => prevPersons.filter(p => p._id !== id));
+            });
     }
   };
+
 
   const filteredPersons = persons.filter(person =>
     person.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -107,9 +111,9 @@ const App = () => {
       <h3>Numbers</h3>
       <ul>
         {filteredPersons.map(person => (
-          <li key={person.id}>
+          <li key={person._id}>
             {person.name} {person.number} 
-            <button onClick={() => deletePerson(person.id)}>delete</button>
+            <button onClick={() => deletePerson(person._id)}>delete</button>
           </li>
         ))}
       </ul>
