@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require('express');
 const app = express();
 const morgan = require("morgan");
@@ -7,6 +8,7 @@ const corsOptions = {
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
 };
+const Contact = require('./models/contact');
 
 app.use(express.json());
 app.use(express.static('dist'));
@@ -18,32 +20,14 @@ morgan.token("post-data", (req) => {
 });
 app.use(morgan(":method :url :status :res[content-length] - :response-time ms :post-data"));
 
-let persons = [
-    { 
-      "id": "1",
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": "2",
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": "3",
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": "4",
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-];
-
 //get all persons
 app.get('/api/persons', (req, res) => {
-    res.json(persons);
+    Contact.find({})
+            .then((result) => {
+                return(res.json(result));
+            })
+            .catch((err) => res.status(500).json({ error: "Error fetching contacts" }))
+
 });
 
 //get info of server
@@ -70,24 +54,28 @@ app.get("/api/persons/:id", (req, res) => {
 });
 
 //adding new person
-app.post("/api/persons", (req, res) => {
-  const { name, number } = req.body;
+app.post("/api/persons", async (req, res) => {
+  const { id, name, number } = req.body;
 
   if (!name || !number) {
-    return res.status(400).json({ error: "Both name and number are required" });
+    return res.status(400).json({ error: "Name and number are required" });
   }
 
-  const nameExists = persons.some((p) => p.name === name);
-  if (nameExists) {
-    return res.status(400).json({ error: "Name must be unique" });
+  try {
+
+    const existingPerson = await Contact.findOne({ name });
+
+    if (existingPerson) {
+      return res.status(400).json({ error: "Name must be unique" });
+    }
+
+    const newPerson = new Contact({ id, name, number });
+    const savedPerson = await newPerson.save();
+    console.log(savedPerson);
+    return res.status(201).json(savedPerson);
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
   }
-
-  const id = Math.floor(Math.random() * 10000) + 1;
-
-  const newPerson = { id, name, number };
-  persons.push(newPerson);
-
-  res.status(201).json(newPerson);
 });
 
 //delete a person's data

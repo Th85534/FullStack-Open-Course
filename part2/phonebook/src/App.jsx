@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import phonebookService from './services/phonebook';
 import Notification from './components/Notification';
-
+import { nanoid } from 'nanoid';
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState('');
@@ -49,14 +49,17 @@ const App = () => {
         setNewNumber('');
       }
     } else {
-      const newPerson = { name: newName, number: newNumber };
+      const newPerson = { id: nanoid(20), name: newName, number: newNumber };
 
       phonebookService.create(newPerson)
         .then(returnedPerson => {
           setPersons(prevPersons => prevPersons.concat(returnedPerson));
           showNotification(`Added ${newName}`, 'success');
         })
-        .catch(() => showNotification(`Error adding ${newName}`, 'error'));
+        .catch((err) => {
+          console.error(err)
+          showNotification(`Error adding ${newName}`, 'error')
+        });
 
       setNewName('');
       setNewNumber('');
