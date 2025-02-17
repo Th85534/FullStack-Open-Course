@@ -41,6 +41,7 @@ const App = () => {
             showNotification(`Updated ${newName}'s number`, 'success');
           })
           .catch(error => {
+            console.log(error.response.data.error)
             showNotification(`Error: ${newName} was already removed from server`, 'error');
             setPersons(persons.filter(person => person._id !== existingPerson._id));
           });
