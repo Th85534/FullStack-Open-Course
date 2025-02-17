@@ -5,6 +5,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "lint": "eslint .",
     "build:ui": "rm -rf dist && cd ../ && cd ../ && cd part2/phonebook && npm install && npm run build && cp -r dist ../../part3/phonebook-backend",
     "deploy": "git config --global user.email 'your-email@example.com' && git config --global user.name 'Your Name' && npm run build:ui && cd ../../part3/phonebook-backend && npm install && git diff --quiet || (git add . && git commit -m 'uibuild' && git push origin main)",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,6 +21,9 @@
     "morgan": "^1.10.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "eslint": "^9.20.1",
+    "globals": "^15.15.0",
     "nodemon": "^3.1.9"
   }
 }

@@ -112,7 +112,7 @@ app.delete("/api/persons/:id", async (req, res, next) => {
 });
 
 // Error Handling Middleware
-const errorHandler = (error, req, res, next) => {
+const errorHandler = (error, req, res ) => {
   console.error(error.message);
 
   if (error.name === "CastError") {
