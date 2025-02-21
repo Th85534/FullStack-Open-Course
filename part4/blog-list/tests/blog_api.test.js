@@ -1,4 +1,4 @@
-const { test, describe, before, after } = require('node:test')
+const { test, describe, beforeEach, after } = require('node:test')
 const assert = require('node:assert/strict')
 const supertest = require('supertest')
 const mongoose = require('mongoose')
@@ -22,32 +22,35 @@ const initialBlogs = [
   }
 ]
 
-// **Setup Database Before Tests Run**
-before(async () => {
+let blogIdToDelete
+
+// Setup Before Each Test
+beforeEach(async () => {
   await Blog.deleteMany({})
-  await Blog.insertMany(initialBlogs)
+  const createdBlogs = await Blog.insertMany(initialBlogs)
+  blogIdToDelete = createdBlogs[0]._id.toString()
 })
 
 describe('Blog API Tests', () => {
 
-  test('blogs are returned as JSON', async () => {
+  test('returns blogs as JSON', async () => {
     const response = await api.get('/api/blogs')
     assert.equal(response.status, 200)
     assert.equal(response.headers['content-type'].includes('application/json'), true)
   })
 
-  test('all blogs are returned', async () => {
+  test('returns all blogs', async () => {
     const response = await api.get('/api/blogs')
     assert.equal(response.body.length, initialBlogs.length)
   })
 
-  test('a specific blog title is within the returned blogs', async () => {
+  test('returns a specific blog title', async () => {
     const response = await api.get('/api/blogs')
     const titles = response.body.map(blog => blog.title)
     assert.ok(titles.includes('First Blog'))
   })
 
-  test('a valid blog can be added', async () => {
+  test('successfully adds a new blog', async () => {
     const newBlog = {
       title: 'New Blog',
       author: 'Alice Doe',
@@ -61,11 +64,11 @@ describe('Blog API Tests', () => {
     const getResponse = await api.get('/api/blogs')
     assert.equal(getResponse.body.length, initialBlogs.length + 1)
 
-    const titles = getResponse.body.map(blog => blog.title)
-    assert.ok(titles.includes('New Blog'))
+    const savedTitles = getResponse.body.map(blog => blog.title)
+    assert.ok(savedTitles.includes('New Blog'))
   })
 
-  test('blog without likes defaults to 0', async () => {
+  test('defaults likes to 0 if missing', async () => {
     const newBlog = {
       title: 'No Likes Blog',
       author: 'Bob Doe',
@@ -74,23 +77,43 @@ describe('Blog API Tests', () => {
 
     const postResponse = await api.post('/api/blogs').send(newBlog)
     assert.equal(postResponse.status, 201)
-
-    const savedBlog = postResponse.body
-    assert.equal(savedBlog.likes, 0)
+    assert.equal(postResponse.body.likes, 0)
   })
 
-  test('blog without title or url is rejected', async () => {
-    const newBlog = {
-      author: 'Missing Data'
-    }
-
-    const postResponse = await api.post('/api/blogs').send(newBlog)
+  test('rejects blog without title or URL', async () => {
+    const invalidBlog = { author: 'Anonymous' }
+    const postResponse = await api.post('/api/blogs').send(invalidBlog)
     assert.equal(postResponse.status, 400)
+  })
+
+  test('deletes a blog successfully', async () => {
+    const deleteResponse = await api.delete(`/api/blogs/${blogIdToDelete}`)
+    assert.equal(deleteResponse.status, 204)
+
+    const afterDeleteResponse = await api.get('/api/blogs')
+    assert.equal(afterDeleteResponse.body.length, initialBlogs.length - 1)
+  })
+
+  test('returns 404 when deleting a non-existent blog', async () => {
+    const nonExistentId = new mongoose.Types.ObjectId().toString()
+    const deleteResponse = await api.delete(`/api/blogs/${nonExistentId}`)
+    assert.equal(deleteResponse.status, 404)
+  })
+
+  test('updates a blog\'s likes successfully', async () => {
+    const blogsAtStart = await api.get('/api/blogs')
+    const blogToUpdate = blogsAtStart.body[0]
+
+    const updatedBlog = { likes: blogToUpdate.likes + 1 }
+    const updateResponse = await api.put(`/api/blogs/${blogToUpdate._id}`).send(updatedBlog)
+
+    assert.equal(updateResponse.status, 200)
+    assert.equal(updateResponse.body.likes, blogToUpdate.likes + 1)
   })
 
 })
 
-// **Close Database Connection After Tests**
+// Closing Database Connection After Tests
 after(async () => {
   await mongoose.connection.close()
 })
