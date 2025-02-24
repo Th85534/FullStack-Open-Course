@@ -9,22 +9,19 @@ blogsRouter.get('/', async (request, response) => {
 })
 
 blogsRouter.post('/', async (request, response) => {
-  const { title, author, url, likes } = request.body;
+  const { title, author, url, likes } = request.body
+  const user = request.user // Extracted from userExtractor middleware
+
   if (!request.token) {
     return response.status(401).json({ error: 'Token missing' })
   }
-  if (!title || !url) {
-    return response.status(400).json({ error: 'Title and URL are required' })
-  }
-
-  const decodedToken = jwt.verify(request.token, process.env.SECRET)
-  if (!decodedToken.id) {
-    return response.status(401).json({ error: 'token invalid' })
-  }
-  const user = await User.findById(decodedToken.id)
 
   if (!user) {
-    return response.status(400).json({ error: 'No users found in the database' })
+    return response.status(401).json({ error: 'User authentication failed' })
+  }
+
+  if (!title || !url) {
+    return response.status(400).json({ error: 'Title and URL are required' })
   }
 
   const blog = new Blog({
@@ -43,31 +40,36 @@ blogsRouter.post('/', async (request, response) => {
 
   response.status(201).json(savedBlog)
 })
+
 // Delete a blog by ID
 blogsRouter.delete('/:id', async (request, response) => {
-  const decodedToken = jwt.verify(request.token, process.env.SECRET)
-
-  if (!decodedToken.id) {
-    return response.status(401).json({ error: 'Token missing or invalid' })
+  if (!request.token) {
+    return response.status(401).json({ error: 'Token missing' })
   }
 
-  const userId = decodedToken.id
-  const blog = await Blog.findById(request.params.id)
+  const user = request.user // Extracted from userExtractor middleware
+  if (!user) {
+    return response.status(401).json({ error: 'User authentication failed' })
+  }
 
+  const blog = await Blog.findById(request.params.id)
   if (!blog) {
     return response.status(404).json({ error: 'Blog not found' })
   }
+
   if (!blog.user) {
     return response.status(400).json({ error: 'Blog has no associated user' })
   }
+
   // Ensure only the creator can delete
-  if (blog.user.toString() !== userId.toString()) {
+  if (blog.user.toString() !== user._id.toString()) {
     return response.status(403).json({ error: 'Unauthorized: You can only delete your own blogs' })
   }
 
   await Blog.findByIdAndDelete(request.params.id)
   response.status(204).end()
 })
+
 
 // Update a blog by ID
 blogsRouter.put('/:id', async (request, response) => {
