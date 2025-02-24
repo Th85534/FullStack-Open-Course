@@ -3,13 +3,6 @@ const Blog = require('../models/blog');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken')
 
-// const getTokenFrom = request => {
-//   const authorization = request.get('authorization')
-//   if (authorization && authorization.startsWith('Bearer ')) {
-//     return authorization.replace('Bearer ', '')
-//   }
-//   return null
-// }
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
   response.json(blogs)
@@ -52,13 +45,28 @@ blogsRouter.post('/', async (request, response) => {
 })
 // Delete a blog by ID
 blogsRouter.delete('/:id', async (request, response) => {
-  const deletedBlog = await Blog.findByIdAndDelete(request.params.id)
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
 
-  if (deletedBlog) {
-    response.status(204).end() // No content
-  } else {
-    response.status(404).json({ error: 'Blog not found' })
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: 'Token missing or invalid' })
   }
+
+  const userId = decodedToken.id
+  const blog = await Blog.findById(request.params.id)
+
+  if (!blog) {
+    return response.status(404).json({ error: 'Blog not found' })
+  }
+  if (!blog.user) {
+    return response.status(400).json({ error: 'Blog has no associated user' })
+  }
+  // Ensure only the creator can delete
+  if (blog.user.toString() !== userId.toString()) {
+    return response.status(403).json({ error: 'Unauthorized: You can only delete your own blogs' })
+  }
+
+  await Blog.findByIdAndDelete(request.params.id)
+  response.status(204).end()
 })
 
 // Update a blog by ID
