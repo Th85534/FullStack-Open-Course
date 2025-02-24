@@ -51,40 +51,76 @@ describe('Blog API Tests', () => {
   })
 
   test('successfully adds a new blog', async () => {
+    // Fetch a valid token by logging in a test user
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'testuser', password: 'testpass' }) 
+  
+    const token = loginResponse.body.token
+    assert.ok(token, 'Token should be provided')
+  
     const newBlog = {
       title: 'New Blog',
       author: 'Alice Doe',
       url: 'https://example.com/new',
       likes: 7
     }
-
-    const postResponse = await api.post('/api/blogs').send(newBlog)
+  
+    // Make request with Authorization header
+    const postResponse = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`) // ✅ Include the token
+      .send(newBlog)
+  
     assert.equal(postResponse.status, 201)
-
+  
+    // Fetch all blogs and check if the new blog was added
     const getResponse = await api.get('/api/blogs')
+  
     assert.equal(getResponse.body.length, initialBlogs.length + 1)
-
+  
     const savedTitles = getResponse.body.map(blog => blog.title)
     assert.ok(savedTitles.includes('New Blog'))
   })
+  
 
   test('defaults likes to 0 if missing', async () => {
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'testuser', password: 'testpass' })
+    const token = loginResponse.body.token
+    assert.ok(token, 'Token should be provided')
     const newBlog = {
       title: 'No Likes Blog',
       author: 'Bob Doe',
       url: 'https://example.com/nolikes'
     }
 
-    const postResponse = await api.post('/api/blogs').send(newBlog)
+    const postResponse = await api.post('/api/blogs')
+                                  .set('Authorization', `Bearer ${token}`)
+                                  .send(newBlog)
     assert.equal(postResponse.status, 201)
     assert.equal(postResponse.body.likes, 0)
   })
 
   test('rejects blog without title or URL', async () => {
+    // Fetch a valid token by logging in a test user
+    const loginResponse = await api
+      .post('/api/login')
+      .send({ username: 'testuser', password: 'testpass' })
+    const token = loginResponse.body.token
+    assert.ok(token, 'Token should be provided')
+  
     const invalidBlog = { author: 'Anonymous' }
-    const postResponse = await api.post('/api/blogs').send(invalidBlog)
-    assert.equal(postResponse.status, 400)
+  
+    const postResponse = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`) // ✅ Include token
+      .send(invalidBlog)
+  
+    assert.equal(postResponse.status, 400) // Expecting 400 for invalid data
   })
+  
 
   test('deletes a blog successfully', async () => {
     const deleteResponse = await api.delete(`/api/blogs/${blogIdToDelete}`)
