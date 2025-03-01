@@ -8,7 +8,7 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [notification, setNotification] = useState({ message: null, type: 'success' });
-  console.log(persons)
+
   useEffect(() => {
     phonebookService.getAll()
       .then(initialPersons => setPersons(initialPersons))
