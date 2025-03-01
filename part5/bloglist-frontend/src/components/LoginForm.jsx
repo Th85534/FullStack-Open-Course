@@ -8,7 +8,8 @@ const LoginForm = ({ setUser }) => {
     event.preventDefault()
     try {
       const user = await loginService.login({ username, password })
-      setUser(user)
+      localStorage.setItem('users', JSON.stringify(user))
+      setUser(user);
       setUsername('')
       setPassword('')
     } catch (error) {
